@@ -18,7 +18,7 @@ interface Employee {
   email: string;
   phoneNumber: string;
   department: string;
-  imageBase64?: string;
+  imageUrl?: string;
 }
 
 interface EmployeeTableProps {
@@ -28,7 +28,10 @@ interface EmployeeTableProps {
 }
 
 const EmployeeTable: React.FC<EmployeeTableProps> = ({ employees, onEdit, onDelete }) => {
-  const [sortConfig, setSortConfig] = useState<{ key: keyof Employee; direction: 'asc' | 'desc' } | null>(null);
+  const [sortConfig, setSortConfig] = useState<{ key: keyof Employee; direction: 'asc' | 'desc' }>({
+    key: 'employeeID',
+    direction: 'asc',
+  });
 
   const handleSort = (key: keyof Employee) => {
     setSortConfig((prev) => {
@@ -56,7 +59,7 @@ const EmployeeTable: React.FC<EmployeeTableProps> = ({ employees, onEdit, onDele
   }, [employees, sortConfig]);
 
   return (
-    <TableContainer component={Paper} sx={{ boxShadow: 3, borderRadius: 2 }}>
+    <TableContainer component={Paper} sx={{ boxShadow: 3, borderRadius: 2, mb: 4 }}>
       <Table aria-label="employee table">
         <TableHead sx={{ bgcolor: 'primary.light' }}>
           <TableRow>
@@ -117,9 +120,9 @@ const EmployeeTable: React.FC<EmployeeTableProps> = ({ employees, onEdit, onDele
           {sortedEmployees.map((employee) => (
             <TableRow key={employee.employeeID} hover>
               <TableCell align="center">
-                {employee.imageBase64 ? (
+                {employee.imageUrl ? (
                   <img
-                    src={`data:image/jpeg;base64,${employee.imageBase64}`}
+                    src={`${employee.imageUrl}`}
                     alt="Employee"
                     width="75"
                     style={{ borderRadius: '50%' }}

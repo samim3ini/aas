@@ -40,7 +40,10 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
   onCancelClick,
 }) => {
   const [editedStatus, setEditedStatus] = useState<{ [key: string]: string }>({});
-  const [sortConfig, setSortConfig] = useState<{ key: keyof AttendanceRecord; direction: 'asc' | 'desc' } | null>(null);
+  const [sortConfig, setSortConfig] = useState<{ key: keyof AttendanceRecord; direction: 'asc' | 'desc' }>({
+    key: 'attenDate',
+    direction: 'asc',
+  });
 
   const handleStatusChange = (key: string, value: string) => {
     setEditedStatus((prev) => ({ ...prev, [key]: value }));
@@ -87,7 +90,7 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
   }, [records, sortConfig]);
 
   return (
-    <TableContainer component={Paper} sx={{ boxShadow: 3, borderRadius: 2 }}>
+    <TableContainer component={Paper} sx={{ boxShadow: 3, borderRadius: 2, mb: 4 }}>
       <Table aria-label="attendance table">
         <TableHead sx={{ bgcolor: 'primary.light' }}>
           <TableRow>
@@ -147,7 +150,7 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
                       src={placeholder}
                       alt="No Image"
                       width="100"
-                      height="40"
+                      height="50"
                       style={{ borderRadius: '30%' }}
                     />
                   )}

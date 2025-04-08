@@ -4,7 +4,6 @@ import {
     Box,
     Typography,
     Button,
-    Paper,
     Dialog,
     DialogTitle,
     DialogContent,
@@ -108,7 +107,7 @@ const EmployeeManagement: React.FC = () => {
     };
 
     return (
-        <Container maxWidth="lg">
+        <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', my: 4 }}>
                 <Typography textAlign="center" variant="h4" component="h1" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
                     Employee Management
@@ -125,9 +124,7 @@ const EmployeeManagement: React.FC = () => {
                     Add Employee
                 </Button>
             </Box>
-            <Paper sx={{ p: 2, mb: 4, boxShadow: 3 }}>
-                <EmployeeTable employees={employees} onEdit={handleEditClick} onDelete={handleDelete} />
-            </Paper>
+            <EmployeeTable employees={employees} onEdit={handleEditClick} onDelete={handleDelete} />
             <Dialog open={openForm} onClose={() => setOpenForm(false)} fullWidth maxWidth="sm">
                 <DialogTitle sx={{ bgcolor: 'primary.main', color: 'white' }}>
                     {isEditing ? 'Edit Employee' : 'Add Employee'}

@@ -75,7 +75,7 @@ const AttendanceManagement: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4 }}>
+    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Typography
         textAlign="center"
         variant="h4"
