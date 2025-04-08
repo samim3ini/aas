@@ -120,16 +120,19 @@ const EmployeeTable: React.FC<EmployeeTableProps> = ({ employees, onEdit, onDele
           {sortedEmployees.map((employee) => (
             <TableRow key={employee.employeeID} hover>
               <TableCell align="center">
-                {employee.imageUrl ? (
-                  <img
-                    src={`${employee.imageUrl}`}
-                    alt="Employee"
-                    width="75"
-                    style={{ borderRadius: '50%' }}
-                  />
-                ) : (
-                  <img src={placeholder} alt="No Image" width="75" style={{ borderRadius: '50%' }} />
-                )}
+                <img
+                  src={employee.imageUrl || placeholder}
+                  alt="Visitor"
+                  width="100"
+                  style={{ borderRadius: '50%' }}
+                  onClick={() => {
+                    window.open(employee.imageUrl || placeholder, '_blank');
+                  }}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = placeholder;
+                    (e.target as HTMLImageElement).onclick = () => { window.open(placeholder, '_blank'); };
+                  }}
+                />
               </TableCell>
               <TableCell align="center">{employee.employeeID}</TableCell>
               <TableCell align="center">{employee.fullName}</TableCell>

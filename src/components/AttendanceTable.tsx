@@ -138,22 +138,19 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
             return (
               <TableRow key={key}>
                 <TableCell align="center">
-                  {record.imageUrl ? (
-                    <img
-                      src={record.imageUrl}
-                      alt="Visitor"
-                      width="100"
-                      style={{ borderRadius: '30%' }}
-                    />
-                  ) : (
-                    <img
-                      src={placeholder}
-                      alt="No Image"
-                      width="100"
-                      height="50"
-                      style={{ borderRadius: '30%' }}
-                    />
-                  )}
+                  <img
+                    src={record.imageUrl || placeholder}
+                    alt="Visitor"
+                    width="100"
+                    style={{ borderRadius: '10%' }}
+                    onClick={() => {
+                      window.open(record.imageUrl || placeholder, '_blank');
+                    }}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = placeholder;
+                      (e.target as HTMLImageElement).onclick = () => { window.open(placeholder, '_blank'); };
+                    }}
+                  />
                 </TableCell>
                 <TableCell align="center">{record.employeeID}</TableCell>
                 <TableCell align="center">{record.attenDate}</TableCell>

@@ -25,11 +25,15 @@ export const deleteEmployee = async (employeeID: string) => {
 };
 
 export const fetchAttendanceRecords = async () => {
-    return axios.get(API_ATTEN_URL);
+  return axios.get(API_ATTEN_URL);
 };
 
-export const updateAttendanceStatus = async (employeeID: string, updatedStatus: string) => {
-  return axios.put(`${API_ATTEN_URL}/${employeeID}`, { empStatus: updatedStatus }, {
+export const updateAttendanceStatus = async (employeeID: string, attenDate: string, updatedStatus: string) => {
+  return axios.put(`${API_ATTEN_URL}/${employeeID}`, {
+    employeeID,
+    attenDate,
+    empStatus: updatedStatus
+  }, {
     headers: { 'Content-Type': 'application/json' },
   });
 };

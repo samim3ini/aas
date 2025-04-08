@@ -46,7 +46,7 @@ const AttendanceManagement: React.FC = () => {
 
     if (recordToUpdate && recordToUpdate.empStatus !== updatedStatus) {
       try {
-        await updateAttendanceStatus(employeeID, updatedStatus);
+        await updateAttendanceStatus(employeeID, attenDate, updatedStatus); // Pass attenDate here
         setRecords((prevRecords) =>
           prevRecords.map((record) =>
             record.employeeID === employeeID && record.attenDate === attenDate
@@ -59,7 +59,6 @@ const AttendanceManagement: React.FC = () => {
         setError('Failed to update attendance status.');
       }
     } else {
-      // If no change, just exit edit mode
       handleCancelClick(employeeID, attenDate);
     }
   };
