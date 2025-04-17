@@ -246,12 +246,12 @@ const AttendanceAnalytics: React.FC = () => {
               <YAxis domain={[0, 100]} tickFormatter={t => `${t}%`} />
               <Tooltip formatter={val => `${val}%`} />
               <Legend />
-              <Bar dataKey="value">
-                {barData.map((_, i) => (
+                <Bar dataKey="value">
+                {barData.map((_: { name: string; value: number }, i: number) => (
                   <Cell key={`cell-${i}`} fill={barColors[i % barColors.length]} />
                 ))}
-                <LabelList dataKey="value" position="top" formatter={v => `${v}%`} />
-              </Bar>
+                <LabelList dataKey="value" position="top" formatter={(v: number) => `${v}%`} />
+                </Bar>
             </BarChart>
           </ResponsiveContainer>
         </Box>
