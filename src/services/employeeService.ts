@@ -28,7 +28,11 @@ export const fetchAttendanceRecords = async () => {
   return axios.get(API_ATTEN_URL);
 };
 
-export const updateAttendanceStatus = async (employeeID: string, attenDate: string, updatedStatus: string) => {
+export const updateAttendanceStatus = async (
+  employeeID: string,
+  attenDate: string,
+  updatedStatus: string
+) => {
   return axios.put(`${API_ATTEN_URL}/${employeeID}`, {
     employeeID,
     attenDate,
@@ -38,7 +42,11 @@ export const updateAttendanceStatus = async (employeeID: string, attenDate: stri
   });
 };
 
-export const fetchAttendanceAnalytics = async (date?: string) => {
-  const query = date ? `?date=${date}` : '';
-  return axios.get(`${API_ANYL_URL}${query}`);
+export const fetchAttendanceAnalytics = (
+  date: string,
+  period: 'day' | 'week' | 'month' | 'year'
+) => {
+  return axios.get(`${API_ANYL_URL}`, {
+    params: { date, period }
+  });
 };

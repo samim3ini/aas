@@ -40,9 +40,9 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
   onCancelClick,
 }) => {
   const [editedStatus, setEditedStatus] = useState<{ [key: string]: string }>({});
-  const [sortConfig, setSortConfig] = useState<{ key: keyof AttendanceRecord; direction: 'asc' | 'desc' }>({
+  const [sortConfig, setSortConfig] = useState<{ key: keyof AttendanceRecord; direction: 'desc' | 'asc' }>({
     key: 'attenDate',
-    direction: 'asc',
+    direction: 'desc',
   });
 
   const handleStatusChange = (key: string, value: string) => {

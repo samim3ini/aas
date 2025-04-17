@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { fetchAttendanceAnalytics } from '../services/employeeService';
 import {
   Box,
   Typography,
-  Card,
-  CardContent,
   CircularProgress,
   Container,
   Stack,
-  TextField
+  TextField,
+  ToggleButton,
+  ToggleButtonGroup,
+  Divider,
+  Chip,
+  Button,
+  useTheme
 } from '@mui/material';
+import DownloadIcon from '@mui/icons-material/Download';
 import {
   PieChart,
   Pie,
@@ -24,9 +28,13 @@ import {
   Cell,
   LabelList
 } from 'recharts';
+import { fetchAttendanceAnalytics } from '../services/employeeService';
+import { useError } from '../context/ErrorContext';
 
 interface AnalyticsData {
-  date: string;
+  period: 'day' | 'week' | 'month' | 'year';
+  startDate: string;
+  endDate: string;
   totalRecords: number;
   presentCount: number;
   lateCount: number;
@@ -41,209 +49,212 @@ interface AnalyticsData {
   peakCheckInHour: number | string;
 }
 
+const barColors = ['#4caf50', '#ff9800', '#f44336', '#2196f3'];
+const pieColors = ['#4caf50', '#ff9800', '#f44336'];
+const periodLabels: Record<AnalyticsData['period'], string> = {
+  day: 'Daily',
+  week: 'Weekly',
+  month: 'Monthly',
+  year: 'Yearly',
+};
+
 const AttendanceAnalytics: React.FC = () => {
+  const theme = useTheme();
+  const { setError } = useError();
+
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string>('');
   const [selectedDate, setSelectedDate] = useState<string>('');
+  const [period, setPeriod] = useState<AnalyticsData['period']>('day');
 
-  // Set default date on mount.
+  // initialize date
   useEffect(() => {
     const today = new Date();
     const yyyy = today.getFullYear();
     const mm = String(today.getMonth() + 1).padStart(2, '0');
     const dd = String(today.getDate()).padStart(2, '0');
-    const defaultDate = `${yyyy}-${mm}-${dd}`;
-    setSelectedDate(defaultDate);
+    setSelectedDate(`${yyyy}-${mm}-${dd}`);
   }, []);
 
-  const fetchData = async (date: string) => {
-    setLoading(true);
-    setError('');
-    try {
-      const response = await fetchAttendanceAnalytics(date);
-      setAnalytics(response.data);
-    } catch (err: any) {
-      setError('Failed to fetch analytics data.');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Fetch analytics when the selected date changes.
+  // fetch on date/period change
   useEffect(() => {
-    if (selectedDate) {
-      fetchData(selectedDate);
-    }
-  }, [selectedDate]);
+    if (!selectedDate) return;
+    setLoading(true);
+    fetchAttendanceAnalytics(selectedDate, period)
+      .then(resp => {
+        setAnalytics(resp.data);
+      })
+      .catch((e: any) => {
+        setError(e, e.response?.data);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, [selectedDate, period, setError]);
+
+  const handleExportCSV = () => {
+    if (!analytics) return;
+    const rows = [
+      ['Period', periodLabels[analytics.period]],
+      ['Start Date', analytics.startDate],
+      ['End Date', analytics.endDate],
+      ['Total Records', analytics.totalRecords.toString()],
+      ['Present', analytics.presentCount.toString()],
+      ['Late', analytics.lateCount.toString()],
+      ['Absent', analytics.absentCount.toString()],
+      ['Attendance Rate', analytics.attendanceRate.toString()],
+      ['Average Check‑In', analytics.averageCheckInTime ?? ''],
+      ['Earliest Check‑In', analytics.earliestCheckIn ?? ''],
+      ['Latest Check‑In', analytics.latestCheckIn ?? ''],
+      ['Peak Hour', analytics.peakCheckInHour.toString()],
+    ];
+    const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `attendance-${selectedDate}-${period}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
         <CircularProgress />
       </Box>
     );
   }
 
-  if (error) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
-        <Typography variant="h6" color="error">
-          {error}
-        </Typography>
-      </Box>
-    );
+  if (!analytics) {
+    return null;
   }
 
-  if (!analytics) return null;
-
-  // Prepare data for the charts.
   const pieData = [
     { name: 'Present', value: analytics.presentCount },
     { name: 'Late', value: analytics.lateCount },
-    { name: 'Absent', value: analytics.absentCount }
+    { name: 'Absent', value: analytics.absentCount },
   ];
-
   const barData = [
     { name: 'On Time', value: analytics.onTimeRate },
     { name: 'Late', value: analytics.lateRate },
     { name: 'Absent', value: analytics.absentRate },
-    { name: 'Attendance', value: analytics.attendanceRate }
+    { name: 'Attendance', value: analytics.attendanceRate },
   ];
 
-  // Define colors for the pie chart segments.
-  const pieColors = ['#4caf50', '#ff9800', '#f44336'];
-
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      {/* Header & Controls */}
       <Stack spacing={2} alignItems="center">
-        <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold', color: 'text.primary' }}>
+        <Typography variant="h4" fontWeight="bold">
           Attendance Analytics
         </Typography>
-        <Box
-          component="form"
-          noValidate
-          sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2 }}
-        >
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
           <TextField
-            label="Select Date"
+            label="Date"
             type="date"
             value={selectedDate}
-            onChange={(e) => {
-              const newDate = e.target.value;
-              setSelectedDate(newDate);
-              fetchData(newDate);
-            }}
+            onChange={e => setSelectedDate(e.target.value)}
+            size="small"
           />
+          <ToggleButtonGroup
+            value={period}
+            exclusive
+            onChange={(_e, v) => v && setPeriod(v)}
+            size="small"
+          >
+            <ToggleButton value="day">Day</ToggleButton>
+            <ToggleButton value="week">Week</ToggleButton>
+            <ToggleButton value="month">Month</ToggleButton>
+            <ToggleButton value="year">Year</ToggleButton>
+          </ToggleButtonGroup>
+          <Button
+            variant="contained"
+            startIcon={<DownloadIcon />}
+            size="small"
+            onClick={handleExportCSV}
+          >
+            Export CSV
+          </Button>
         </Box>
       </Stack>
-      <br />
 
-      {/* Summary Cards */}
-      <Stack
-        spacing={3}
-        direction={{ xs: 'column', md: 'row' }}
-        justifyContent="center"
-        alignItems="center"
-        sx={{ mb: 4 }}
-      >
-        <Card sx={{ minWidth: 275 }}>
-          <CardContent>
-            <Typography variant="h6" gutterBottom color="primary">
-              Attendance Summary
-            </Typography>
-            <Typography>Total Records: {analytics.totalRecords}</Typography>
-            <Typography>Present: {analytics.presentCount}</Typography>
-            <Typography>Late: {analytics.lateCount}</Typography>
-            <Typography>Absent: {analytics.absentCount}</Typography>
-            <Typography>
-              Attendance Rate: {analytics.attendanceRate}%
-            </Typography>
-          </CardContent>
-        </Card>
-        <Card sx={{ minWidth: 275 }}>
-          <CardContent>
-            <Typography variant="h6" gutterBottom color="primary">
-              Check-In Times
-            </Typography>
-            <Typography>
-              Average: {analytics.averageCheckInTime || 'N/A'}
-            </Typography>
-            <Typography>
-              Earliest: {analytics.earliestCheckIn || 'N/A'}
-            </Typography>
-            <Typography>
-              Latest: {analytics.latestCheckIn || 'N/A'}
-            </Typography>
-            <Typography>Peak Hour: {analytics.peakCheckInHour}</Typography>
-          </CardContent>
-        </Card>
-      </Stack>
+      <Divider sx={{ my: 3 }} />
+
+      {/* Summary Chips */}
+      <Box sx={{ bgcolor: theme.palette.background.default, p: 2, borderRadius: 2, mb: 4 }}>
+        <Stack direction="row" spacing={1} justifyContent="center" flexWrap="wrap">
+          <Chip label={`Period: ${periodLabels[analytics.period]}`} variant="outlined" />
+          <Chip label={`Range: ${analytics.startDate} → ${analytics.endDate}`} variant="outlined" />
+          <Chip label={`Total Records: ${analytics.totalRecords}`} />
+          <Chip label={`Present: ${analytics.presentCount}`} color="success" />
+          <Chip label={`Late: ${analytics.lateCount}`} color="warning" />
+          <Chip label={`Absent: ${analytics.absentCount}`} color="error" />
+          <Chip label={`Attendance Rate: ${analytics.attendanceRate}%`} color="info" />
+        </Stack>
+      </Box>
+
+      {/* Check‑In Time Chips */}
+      <Box sx={{ bgcolor: theme.palette.background.default, p: 2, borderRadius: 2, mb: 4 }}>
+        <Stack direction="row" spacing={1} justifyContent="center" flexWrap="wrap">
+          <Chip label={`Average Check‑In: ${analytics.averageCheckInTime ?? 'N/A'}`} />
+          <Chip label={`Earliest Check‑In: ${analytics.earliestCheckIn ?? 'N/A'}`} />
+          <Chip label={`Latest Check‑In: ${analytics.latestCheckIn ?? 'N/A'}`} />
+          <Chip label={`Peak Hour: ${analytics.peakCheckInHour}`} />
+        </Stack>
+      </Box>
 
       {/* Charts */}
-      <Box
-        sx={{
-          mt: 4,
-          display: 'flex',
-          flexWrap: 'wrap',
-          justifyContent: 'center',
-          gap: 4
-        }}
-      >
-        <Card sx={{ flex: '1 1 300px', maxWidth: 500 }}>
-          <CardContent>
-            <Typography variant="h6" align="center" gutterBottom color="primary">
-              Attendance Distribution
-            </Typography>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={80}
-                  label
-                >
-                  {pieData.map((_, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={pieColors[index % pieColors.length]}
-                    />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(value: any) => `${value}`} />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        <Card sx={{ flex: '1 1 300px', maxWidth: 500 }}>
-          <CardContent>
-            <Typography variant="h6" align="center" gutterBottom color="primary">
-              Attendance Rates (%)
-            </Typography>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={barData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis tickFormatter={(tick) => `${tick}%`} />
-                <Tooltip formatter={(value: any) => `${value}%`} />
-                <Legend />
-                <Bar dataKey="value" fill="#2196f3">
-                  <LabelList
-                    dataKey="value"
-                    position="top"
-                    formatter={(value: any) => `${value}%`}
-                  />
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 4 }}>
+        <Box sx={{ flex: '1 1 300px', maxWidth: 500, bgcolor: 'background.paper', p: 2, borderRadius: 2 }}>
+          <Typography variant="h6" align="center" color="primary" gutterBottom>
+            Status Breakdown
+          </Typography>
+          <ResponsiveContainer width="100%" height={350}>
+            <PieChart>
+              <Pie
+                data={pieData}
+                dataKey="value"
+                nameKey="name"
+                cx="50%"
+                cy="50%"
+                innerRadius={40}
+                outerRadius={80}
+                label
+              >
+                {pieData.map((_, i) => (
+                  <Cell key={i} fill={pieColors[i % pieColors.length]} />
+                ))}
+              </Pie>
+              <Tooltip />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        </Box>
+        <Box sx={{ flex: '1 1 300px', maxWidth: 500, bgcolor: 'background.paper', p: 2, borderRadius: 2 }}>
+          <Typography variant="h6" align="center" color="primary" gutterBottom>
+            Punctuality Rates (%)
+          </Typography>
+          <ResponsiveContainer width="100%" height={350}>
+            <BarChart
+              data={barData}
+              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis domain={[0, 100]} tickFormatter={t => `${t}%`} />
+              <Tooltip formatter={val => `${val}%`} />
+              <Legend />
+              <Bar dataKey="value">
+                {barData.map((_, i) => (
+                  <Cell key={`cell-${i}`} fill={barColors[i % barColors.length]} />
+                ))}
+                <LabelList dataKey="value" position="top" formatter={v => `${v}%`} />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </Box>
       </Box>
     </Container>
   );

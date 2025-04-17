@@ -1,7 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Container, Typography } from '@mui/material';
-import { fetchAttendanceRecords, updateAttendanceStatus } from '../services/employeeService';
+import { Container, Typography, CircularProgress } from '@mui/material';
 import AttendanceTable from '../components/AttendanceTable';
+import {
+  fetchAttendanceRecords,
+  updateAttendanceStatus,
+} from '../services/employeeService';
+import { useError } from '../context/ErrorContext';
 
 interface AttendanceRecord {
   employeeID: string;
@@ -13,25 +17,30 @@ interface AttendanceRecord {
 }
 
 const AttendanceManagement: React.FC = () => {
+  const { setError } = useError();
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
-  const [error, setError] = useState('');
+  const [loading, setLoading] = useState<boolean>(false);
 
+  // Load attendance on mount
   useEffect(() => {
-    const loadAttendance = async () => {
-      try {
-        const response = await fetchAttendanceRecords();
-        setRecords(response.data);
-      } catch (err: any) {
-        console.error('Error fetching attendance records:', err);
-        setError('Failed to load attendance records.');
-      }
-    };
     loadAttendance();
   }, []);
 
+  const loadAttendance = async () => {
+    setLoading(true);
+    try {
+      const response = await fetchAttendanceRecords();
+      setRecords(response.data);
+    } catch (e: any) {
+      setError(e, e.response?.data);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleEditClick = (employeeID: string, attenDate: string) => {
-    setRecords((prevRecords) =>
-      prevRecords.map((record) =>
+    setRecords(prev =>
+      prev.map(record =>
         record.employeeID === employeeID && record.attenDate === attenDate
           ? { ...record, isEditing: true }
           : record
@@ -39,33 +48,39 @@ const AttendanceManagement: React.FC = () => {
     );
   };
 
-  const handleSaveClick = async (employeeID: string, attenDate: string, updatedStatus: string) => {
-    const recordToUpdate = records.find(
-      (record) => record.employeeID === employeeID && record.attenDate === attenDate
+  const handleSaveClick = async (
+    employeeID: string,
+    attenDate: string,
+    updatedStatus: string
+  ) => {
+    const record = records.find(
+      r => r.employeeID === employeeID && r.attenDate === attenDate
     );
-
-    if (recordToUpdate && recordToUpdate.empStatus !== updatedStatus) {
-      try {
-        await updateAttendanceStatus(employeeID, attenDate, updatedStatus); // Pass attenDate here
-        setRecords((prevRecords) =>
-          prevRecords.map((record) =>
-            record.employeeID === employeeID && record.attenDate === attenDate
-              ? { ...record, empStatus: updatedStatus, isEditing: false }
-              : record
-          )
-        );
-      } catch (err) {
-        console.error('Error updating attendance status:', err);
-        setError('Failed to update attendance status.');
-      }
-    } else {
+    if (!record || record.empStatus === updatedStatus) {
       handleCancelClick(employeeID, attenDate);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await updateAttendanceStatus(employeeID, attenDate, updatedStatus);
+      setRecords(prev =>
+        prev.map(r =>
+          r.employeeID === employeeID && r.attenDate === attenDate
+            ? { ...r, empStatus: updatedStatus, isEditing: false }
+            : r
+        )
+      );
+    } catch (e: any) {
+      setError(e, e.response?.data);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleCancelClick = (employeeID: string, attenDate: string) => {
-    setRecords((prevRecords) =>
-      prevRecords.map((record) =>
+    setRecords(prev =>
+      prev.map(record =>
         record.employeeID === employeeID && record.attenDate === attenDate
           ? { ...record, isEditing: false }
           : record
@@ -79,18 +94,21 @@ const AttendanceManagement: React.FC = () => {
         textAlign="center"
         variant="h4"
         component="h1"
-        sx={{ fontWeight: 'bold', color: 'text.primary' }}
+        sx={{ fontWeight: 'bold', color: 'text.primary', mb: 2 }}
       >
         Attendance Management
       </Typography>
-      <br />
-      {error && <Typography color="error">{error}</Typography>}
-      <AttendanceTable
-        records={records}
-        onEditClick={handleEditClick}
-        onSaveClick={handleSaveClick}
-        onCancelClick={handleCancelClick}
-      />
+
+      {loading ? (
+        <CircularProgress sx={{ display: 'block', mx: 'auto', my: 4 }} />
+      ) : (
+        <AttendanceTable
+          records={records}
+          onEditClick={handleEditClick}
+          onSaveClick={handleSaveClick}
+          onCancelClick={handleCancelClick}
+        />
+      )}
     </Container>
   );
 };

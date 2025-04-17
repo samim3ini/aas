@@ -29,7 +29,20 @@ function App() {
               fontSize: { xs: '1rem', sm: '1.25rem' },
             }}
           >
-            Attendance System Admin Portal
+            <Box
+              sx={{
+                display: 'inline-block',
+                padding: '8px 16px',
+                border: '2px solid',
+                borderColor: 'primary.main',
+                borderRadius: '8px',
+                backgroundColor: 'primary.light',
+                color: 'primary.contrastText',
+                boxShadow: 2,
+              }}
+            >
+              Attendance System Admin Portal
+            </Box>
           </Typography>
           <Box
             sx={{

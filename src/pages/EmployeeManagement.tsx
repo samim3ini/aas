@@ -6,13 +6,17 @@ import {
     Button,
     Dialog,
     DialogTitle,
-    DialogContent,
-    DialogContentText,
-    DialogActions,
+    DialogContent
 } from '@mui/material';
 import EmployeeForm from '../components/EmployeeForm';
 import EmployeeTable from '../components/EmployeeTable';
-import { fetchEmployees, addEmployee, updateEmployee, deleteEmployee } from '../services/employeeService';
+import {
+    fetchEmployees,
+    addEmployee,
+    updateEmployee,
+    deleteEmployee
+} from '../services/employeeService';
+import { useError } from '../context/ErrorContext';
 
 interface Employee {
     employeeID: string;
@@ -24,13 +28,13 @@ interface Employee {
 }
 
 const EmployeeManagement: React.FC = () => {
+    const { setError } = useError();
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [openForm, setOpenForm] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
-    const [errorDialogOpen, setErrorDialogOpen] = useState(false);
-    const [errorMessage, setErrorMessage] = useState('');
 
+    // Load all employees on mount
     useEffect(() => {
         loadEmployees();
     }, []);
@@ -39,47 +43,44 @@ const EmployeeManagement: React.FC = () => {
         try {
             const response = await fetchEmployees();
             setEmployees(response.data);
-        } catch (error) {
-            console.error('Error fetching employees:', error);
+        } catch (e: any) {
+            setError(e, e.response?.data);
         }
     };
 
-    const handleAdd = async (formData: any) => {
+    const handleAdd = async (data: any) => {
         try {
-            await addEmployee(formData);
+            await addEmployee(data);
             setOpenForm(false);
             loadEmployees();
-        } catch (error: any) {
-            console.error('Error adding employee:', error);
-            setErrorMessage('Error adding employee: ' + error.message);
-            setErrorDialogOpen(true);
+        } catch (e: any) {
+            setError(e, e.response?.data);
         }
     };
 
-    const handleUpdate = async (formData: any) => {
+    const handleUpdate = async (data: any) => {
         try {
-            await updateEmployee(formData.employeeID, formData);
+            await updateEmployee(data.employeeID, data);
             setOpenForm(false);
             setIsEditing(false);
             setEditingEmployee(null);
             loadEmployees();
-        } catch (error) {
-            console.error('Error updating employee:', error);
-            // Optionally handle update errors here too.
+        } catch (e: any) {
+            setError(e, e.response?.data);
         }
     };
 
-    const handleDelete = async (employeeID: string) => {
+    const handleDelete = async (id: string) => {
         try {
-            await deleteEmployee(employeeID);
+            await deleteEmployee(id);
             loadEmployees();
-        } catch (error) {
-            console.error('Error deleting employee:', error);
+        } catch (e: any) {
+            setError(e, e.response?.data);
         }
     };
 
-    const handleEditClick = (employee: Employee) => {
-        setEditingEmployee(employee);
+    const handleEditClick = (emp: Employee) => {
+        setEditingEmployee(emp);
         setIsEditing(true);
         setOpenForm(true);
     };
@@ -90,75 +91,71 @@ const EmployeeManagement: React.FC = () => {
             reader.onloadend = () => {
                 const base64 = reader.result?.toString().split(',')[1];
                 const payload = { ...data, imageBase64: base64 };
-                if (isEditing) {
-                    handleUpdate(payload);
-                } else {
-                    handleAdd(payload);
-                }
+                isEditing ? handleUpdate(payload) : handleAdd(payload);
             };
             reader.readAsDataURL(data.image);
         } else {
-            if (isEditing) {
-                handleUpdate(data);
-            } else {
-                handleAdd(data);
-            }
+            isEditing ? handleUpdate(data) : handleAdd(data);
         }
     };
 
     return (
         <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', my: 4 }}>
-                <Typography textAlign="center" variant="h4" component="h1" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
+            <Box
+                sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    my: 4
+                }}
+            >
+                <Typography
+                    variant="h4"
+                    component="h1"
+                    sx={{ fontWeight: 'bold', color: 'text.primary' }}
+                >
                     Employee Management
                 </Typography>
                 <Button
                     variant="contained"
+                    sx={{ px: 4, py: 1.5 }}
                     onClick={() => {
-                        setOpenForm(true);
                         setIsEditing(false);
                         setEditingEmployee(null);
+                        setOpenForm(true);
                     }}
-                    sx={{ px: 4, py: 1.5 }}
                 >
                     Add Employee
                 </Button>
             </Box>
-            <EmployeeTable employees={employees} onEdit={handleEditClick} onDelete={handleDelete} />
-            <Dialog open={openForm} onClose={() => setOpenForm(false)} fullWidth maxWidth="sm">
+
+            <EmployeeTable
+                employees={employees}
+                onEdit={handleEditClick}
+                onDelete={handleDelete}
+            />
+
+            <Dialog
+                open={openForm}
+                onClose={() => setOpenForm(false)}
+                fullWidth
+                maxWidth="sm"
+            >
                 <DialogTitle sx={{ bgcolor: 'primary.main', color: 'white' }}>
                     {isEditing ? 'Edit Employee' : 'Add Employee'}
                 </DialogTitle>
                 <DialogContent>
                     <EmployeeForm
                         initialData={editingEmployee || undefined}
+                        isEditing={isEditing}
                         onSubmit={handleFormSubmit}
                         onCancel={() => {
                             setOpenForm(false);
                             setIsEditing(false);
                             setEditingEmployee(null);
                         }}
-                        isEditing={isEditing}
                     />
                 </DialogContent>
-            </Dialog>
-            <Dialog
-                open={errorDialogOpen}
-                onClose={() => setErrorDialogOpen(false)}
-                aria-labelledby="error-dialog-title"
-                aria-describedby="error-dialog-description"
-            >
-                <DialogTitle id="error-dialog-title">Error</DialogTitle>
-                <DialogContent>
-                    <DialogContentText id="error-dialog-description" color="error">
-                        {errorMessage}
-                    </DialogContentText>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setErrorDialogOpen(false)} color="primary">
-                        Close
-                    </Button>
-                </DialogActions>
             </Dialog>
         </Container>
     );
