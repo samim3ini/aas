@@ -11,6 +11,7 @@ interface AttendanceRecord {
   employeeID: string;
   attenDate: string;
   checkInTime: string | null;
+  checkOutTime: string | null;
   empStatus: string;
   imageUrl?: string;
   isEditing?: boolean;

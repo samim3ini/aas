@@ -21,6 +21,7 @@ interface AttendanceRecord {
   employeeID: string;
   attenDate: string;
   checkInTime: string | null;
+  checkOutTime: string | null;
   empStatus: string;
   imageUrl?: string;
   isEditing?: boolean;
@@ -75,7 +76,7 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
       const aValue = a[key];
       const bValue = b[key];
 
-      if (key === 'attenDate' || key === 'checkInTime') {
+      if (key === 'attenDate' || key === 'checkInTime' || key === 'checkOutTime') {
         const aDate = aValue ? new Date(aValue.toString()).getTime() : 0;
         const bDate = bValue ? new Date(bValue.toString()).getTime() : 0;
         return direction === 'asc' ? aDate - bDate : bDate - aDate;
@@ -125,6 +126,15 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
               </TableSortLabel>
             </TableCell>
             <TableCell align="center" sx={{ fontWeight: 'bold', color: 'text.secondary' }}>
+              <TableSortLabel
+                active={sortConfig?.key === 'checkOutTime'}
+                direction={sortConfig?.key === 'checkOutTime' ? sortConfig.direction : 'asc'}
+                onClick={() => handleSort('checkOutTime')}
+              >
+                Check-Out Time
+              </TableSortLabel>
+            </TableCell>
+            <TableCell align="center" sx={{ fontWeight: 'bold', color: 'text.secondary' }}>
               Status
             </TableCell>
             <TableCell align="center" sx={{ fontWeight: 'bold', color: 'text.secondary' }}>
@@ -156,6 +166,9 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
                 <TableCell align="center">{record.attenDate}</TableCell>
                 <TableCell align="center">
                   {record.checkInTime ? new Date(record.checkInTime).toLocaleTimeString() : 'N/A'}
+                </TableCell>
+                <TableCell align="center">
+                  {record.checkOutTime ? new Date(record.checkOutTime).toLocaleTimeString() : 'N/A'}
                 </TableCell>
                 <TableCell align="center">
                   {record.isEditing ? (
