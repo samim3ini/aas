@@ -102,7 +102,7 @@ const AttendanceAnalytics: React.FC = () => {
       ['Present', analytics.presentCount.toString()],
       ['Late', analytics.lateCount.toString()],
       ['Absent', analytics.absentCount.toString()],
-      ['Attendance Rate', analytics.attendanceRate.toString()],
+      ['Attendance Rate', analytics.attendanceRate.toString() + '%'],
       ['Average Check‑In', analytics.averageCheckInTime ?? ''],
       ['Earliest Check‑In', analytics.earliestCheckIn ?? ''],
       ['Latest Check‑In', analytics.latestCheckIn ?? ''],
@@ -137,10 +137,10 @@ const AttendanceAnalytics: React.FC = () => {
     { name: 'Absent', value: analytics.absentCount },
   ];
   const barData = [
-    { name: 'On Time', value: analytics.onTimeRate },
-    { name: 'Late', value: analytics.lateRate },
-    { name: 'Absent', value: analytics.absentRate },
-    { name: 'Attendance', value: analytics.attendanceRate },
+    { name: 'On Time', rate: analytics.onTimeRate },
+    { name: 'Late', rate: analytics.lateRate },
+    { name: 'Absent', rate: analytics.absentRate },
+    { name: 'Attendance', rate: analytics.attendanceRate },
   ];
 
   return (
@@ -169,15 +169,15 @@ const AttendanceAnalytics: React.FC = () => {
             <ToggleButton value="month">Month</ToggleButton>
             <ToggleButton value="year">Year</ToggleButton>
           </ToggleButtonGroup>
-          <Button
-            variant="contained"
-            startIcon={<DownloadIcon />}
-            size="small"
-            onClick={handleExportCSV}
-          >
-            Export CSV
-          </Button>
         </Box>
+        <Button
+          variant="outlined"
+          startIcon={<DownloadIcon />}
+          size="small"
+          onClick={handleExportCSV}
+        >
+          Export CSV
+        </Button>
       </Stack>
 
       <Divider sx={{ my: 3 }} />
@@ -239,19 +239,21 @@ const AttendanceAnalytics: React.FC = () => {
           <ResponsiveContainer width="100%" height={350}>
             <BarChart
               data={barData}
-              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+              margin={{ top: 20, right: 5, left: 5, bottom: 5 }}
             >
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" />
               <YAxis domain={[0, 100]} tickFormatter={t => `${t}%`} />
-              <Tooltip formatter={val => `${val}%`} />
-              <Legend />
-                <Bar dataKey="value">
-                {barData.map((_: { name: string; value: number }, i: number) => (
+              <Tooltip
+                formatter={(value: number) => `${value}%`}
+                labelFormatter={() => ""}
+               />
+              <Bar dataKey="rate">
+                {barData.map((_: { name: string; rate: number }, i: number) => (
                   <Cell key={`cell-${i}`} fill={barColors[i % barColors.length]} />
                 ))}
-                <LabelList dataKey="value" position="top" formatter={(v: number) => `${v}%`} />
-                </Bar>
+                <LabelList dataKey="rate" position="top" formatter={(v: number) => `${v}%`} />
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </Box>
