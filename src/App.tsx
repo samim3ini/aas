@@ -1,10 +1,13 @@
-import { BrowserRouter as Router } from 'react-router-dom';
+import { useState } from 'react';
 import { AppBar, Toolbar, Typography, Button, Container, Box } from '@mui/material';
 import { useAuthenticator } from '@aws-amplify/ui-react';
-import AppRoutes from './Routes';
+import EmployeeManagement from './pages/EmployeeManagement';
+import AttendanceManagement from './pages/AttendanceManagement';
+import AttendanceAnalytics from './pages/AttendanceAnalytics';
 
 function App() {
   const { signOut } = useAuthenticator();
+  const [currentPage, setCurrentPage] = useState('employeeManagement'); // State for the current page
 
   const handleLogout = () => {
     if (window.confirm('Are you sure you want to log out?')) {
@@ -12,8 +15,22 @@ function App() {
     }
   };
 
+  // Function to render the current page
+  const renderPage = () => {
+    switch (currentPage) {
+      case 'employeeManagement':
+        return <EmployeeManagement />;
+      case 'attendanceManagement':
+        return <AttendanceManagement />;
+      case 'attendanceAnalytics':
+        return <AttendanceAnalytics />;
+      default:
+        return <div>Page Not Found</div>;
+    }
+  };
+
   return (
-    <Router>
+    <>
       <AppBar position="static">
         <Toolbar
           sx={{
@@ -55,8 +72,7 @@ function App() {
           >
             <Button
               color="inherit"
-              component="a"
-              href="/"
+              onClick={() => setCurrentPage('employeeManagement')} // Change page
               sx={{
                 minWidth: '100px',
                 '&.active': { fontWeight: 'bold', textDecoration: 'underline' },
@@ -66,8 +82,7 @@ function App() {
             </Button>
             <Button
               color="inherit"
-              component="a"
-              href="/attendance"
+              onClick={() => setCurrentPage('attendanceManagement')} // Change page
               sx={{
                 minWidth: '100px',
                 '&.active': { fontWeight: 'bold', textDecoration: 'underline' },
@@ -77,8 +92,7 @@ function App() {
             </Button>
             <Button
               color="inherit"
-              component="a"
-              href="/analytics"
+              onClick={() => setCurrentPage('attendanceAnalytics')} // Change page
               sx={{
                 minWidth: '100px',
                 '&.active': { fontWeight: 'bold', textDecoration: 'underline' },
@@ -102,9 +116,9 @@ function App() {
         </Toolbar>
       </AppBar>
       <Container sx={{ marginTop: 4 }}>
-        <AppRoutes />
+        {renderPage()} {/* Render the current page */}
       </Container>
-    </Router>
+    </>
   );
 }
 
